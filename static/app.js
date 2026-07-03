@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // State Variables
     let allEntries = [];
+    let currentDisplayedEntries = [];
     let activeFilter = 'all';
     let searchQuery = '';
     let currentSelectedTweet = null;
@@ -9,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const notesFeed = document.getElementById('notes-feed');
     const loadingState = document.getElementById('loading-state');
+    const exportBtn = document.getElementById('export-btn');
     const errorState = document.getElementById('error-state');
     const emptyState = document.getElementById('empty-state');
     const errorMessage = document.getElementById('error-message');
@@ -169,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        currentDisplayedEntries = filteredEntries;
         renderFeed(filteredEntries);
     }
 
@@ -234,12 +237,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="update-content">
                         ${upd.html}
                     </div>
-                    <div class="card-actions">
+                    <div class="card-actions" style="gap: 0.5rem;">
+                        <button class="btn btn-secondary btn-sm copy-trigger-btn" title="Copy update to clipboard">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
                         <button class="btn btn-secondary btn-sm tweet-trigger-btn" title="Tweet about this update">
                             <i class="fa-brands fa-x-twitter"></i> Share Update
                         </button>
                     </div>
                 `;
+
+                // Add Copy Trigger Event
+                const copyBtn = card.querySelector('.copy-trigger-btn');
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        const copyText = `BigQuery Update (${entry.date}) - [${upd.type}] ${upd.text}\nSource: ${entry.link}`;
+                        await navigator.clipboard.writeText(copyText);
+                        const originalHTML = copyBtn.innerHTML;
+                        copyBtn.innerHTML = '<i class="fa-solid fa-check" style="color: var(--color-feature)"></i> Copied!';
+                        copyBtn.classList.add('active');
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalHTML;
+                            copyBtn.classList.remove('active');
+                        }, 1500);
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                    }
+                });
 
                 // Add Tweet Trigger Event
                 const tweetBtn = card.querySelector('.tweet-trigger-btn');
@@ -366,6 +390,51 @@ document.addEventListener('DOMContentLoaded', () => {
             closeTweetComposer();
         }
     });
+
+    // ----------------------------------------------------
+    // Export to CSV Function
+    // ----------------------------------------------------
+    function exportToCSV(entries) {
+        if (!entries || entries.length === 0) {
+            alert('No updates available to export.');
+            return;
+        }
+
+        let csvRows = [];
+        // CSV Header
+        csvRows.push(['Date', 'Type', 'Description', 'Link'].map(h => `"${h}"`).join(','));
+
+        entries.forEach(entry => {
+            entry.updates.forEach(upd => {
+                // Escape quotes
+                const cleanDesc = upd.text.replace(/"/g, '""');
+                const row = [
+                    `"${entry.date}"`,
+                    `"${upd.type}"`,
+                    `"${cleanDesc}"`,
+                    `"${entry.link}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+        });
+
+        const csvString = csvRows.join('\r\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `bigquery_release_notes_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Attach export event
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            exportToCSV(currentDisplayedEntries);
+        });
+    }
 
     // ----------------------------------------------------
     // Initial Load
