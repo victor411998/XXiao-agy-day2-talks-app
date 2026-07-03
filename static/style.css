@@ -725,3 +725,92 @@ body {
         justify-content: center;
     }
 }
+
+/* Light Theme Overrides */
+body.light-theme {
+    --bg-dark: #f1f5f9;
+    --bg-surface: rgba(255, 255, 255, 0.7);
+    --bg-surface-hover: rgba(255, 255, 255, 0.9);
+    --border-color: rgba(15, 23, 42, 0.08);
+    --border-color-hover: rgba(15, 23, 42, 0.15);
+    
+    --color-primary: #1d4ed8;
+    --color-primary-glow: rgba(29, 78, 216, 0.08);
+    --color-accent: #2563eb;
+    --color-text-main: #0f172a;
+    --color-text-muted: #64748b;
+}
+
+body.light-theme .glow {
+    opacity: 0.05;
+}
+
+body.light-theme .logo-text h1 {
+    background: linear-gradient(135deg, #0f172a 30%, #1e40af 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+body.light-theme .update-content {
+    color: #1e293b;
+}
+
+body.light-theme .update-content code {
+    background: rgba(15, 23, 42, 0.05);
+    color: #0f172a;
+    border-color: rgba(15, 23, 42, 0.03);
+}
+
+body.light-theme .update-content em {
+    color: #475569;
+}
+
+body.light-theme .btn-secondary {
+    background: rgba(15, 23, 42, 0.03);
+    border-color: rgba(15, 23, 42, 0.08);
+    color: #0f172a;
+}
+
+body.light-theme .btn-secondary:hover {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+body.light-theme .search-box input {
+    background: rgba(15, 23, 42, 0.03);
+    border-color: rgba(15, 23, 42, 0.08);
+    color: #0f172a;
+}
+
+body.light-theme .search-box input:focus {
+    background: #ffffff;
+    border-color: var(--color-primary);
+}
+
+body.light-theme .filter-chip {
+    background: rgba(15, 23, 42, 0.03);
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+body.light-theme .filter-chip:hover {
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+}
+
+body.light-theme .modal-content {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.1);
+    color: #0f172a;
+}
+
+body.light-theme .modal-header h2 {
+    color: #0f172a;
+}
+
+body.light-theme .tweet-preview-container {
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+body.light-theme #tweet-textarea {
+    color: #0f172a;
+}
