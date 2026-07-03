@@ -97,6 +97,7 @@
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="search-input" placeholder="Search updates...">
+                <button id="clear-search-btn" class="clear-btn hidden" title="Clear Search">&times;</button>
             </div>
             <div class="filter-groups">
                 <button class="filter-chip active" data-type="all">All</button>
@@ -160,6 +161,14 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Back to Top Button -->
+    <button id="back-to-top-btn" class="back-to-top hidden" title="Back to Top">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
 
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='app.js') }}"></script>

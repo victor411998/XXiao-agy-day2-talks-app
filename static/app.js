@@ -13,8 +13,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportBtn = document.getElementById('export-btn');
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const themeIcon = themeToggleBtn ? themeToggleBtn.querySelector('i') : null;
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+    const backToTopBtn = document.getElementById('back-to-top-btn');
     const errorState = document.getElementById('error-state');
     const emptyState = document.getElementById('empty-state');
+
+    // ----------------------------------------------------
+    // Toast Notification Utility
+    // ----------------------------------------------------
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        let icon = 'fa-solid fa-circle-info';
+        if (type === 'success') icon = 'fa-solid fa-circle-check';
+        if (type === 'error') icon = 'fa-solid fa-circle-exclamation';
+
+        toast.innerHTML = `
+            <i class="toast-icon ${icon}"></i>
+            <span>${message}</span>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3500);
+    }
     const errorMessage = document.getElementById('error-message');
     const refreshBtn = document.getElementById('refresh-btn');
     const refreshIcon = refreshBtn.querySelector('i');
@@ -65,9 +96,13 @@ document.addEventListener('DOMContentLoaded', () => {
             allEntries = data;
             updateStats();
             filterAndRender();
+            if (forceRefresh) {
+                showToast('Release notes updated successfully.', 'success');
+            }
         } catch (error) {
             console.error('Error fetching release notes:', error);
             setError(error.message || 'An unexpected error occurred while loading release notes.');
+            showToast(error.message || 'Failed to fetch release notes.', 'error');
         } finally {
             setLoading(false);
         }
@@ -195,6 +230,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (entries.length === 0) {
             emptyState.classList.remove('hidden');
             notesFeed.classList.add('hidden');
+            
+            const emptyTitle = emptyState.querySelector('h3');
+            const emptyText = emptyState.querySelector('p');
+            
+            let filterName = activeFilter === 'all' ? 'updates' : activeFilter + 's';
+            if (searchQuery) {
+                if (emptyTitle) emptyTitle.textContent = 'No Matches Found';
+                if (emptyText) emptyText.textContent = `We couldn't find any ${filterName.toLowerCase()} matching "${searchQuery}".`;
+            } else {
+                if (emptyTitle) emptyTitle.textContent = `No ${filterName} Available`;
+                if (emptyText) emptyText.textContent = `There are currently no BigQuery ${filterName.toLowerCase()} in this feed.`;
+            }
             return;
         }
 
@@ -252,6 +299,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn btn-secondary btn-sm copy-trigger-btn" title="Copy update to clipboard">
                             <i class="fa-regular fa-copy"></i> Copy
                         </button>
+                        <button class="btn btn-secondary btn-sm copy-link-btn" title="Copy direct link to this update">
+                            <i class="fa-solid fa-link"></i> Link
+                        </button>
                         <button class="btn btn-secondary btn-sm tweet-trigger-btn" title="Tweet about this update">
                             <i class="fa-brands fa-x-twitter"></i> Share Update
                         </button>
@@ -271,8 +321,27 @@ document.addEventListener('DOMContentLoaded', () => {
                             copyBtn.innerHTML = originalHTML;
                             copyBtn.classList.remove('active');
                         }, 1500);
+                        showToast('Update text copied to clipboard!', 'success');
                     } catch (err) {
                         console.error('Failed to copy text: ', err);
+                        showToast('Failed to copy text.', 'error');
+                    }
+                });
+
+                // Add Copy Link Event
+                const copyLinkBtn = card.querySelector('.copy-link-btn');
+                copyLinkBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(entry.link);
+                        const originalHTML = copyLinkBtn.innerHTML;
+                        copyLinkBtn.innerHTML = '<i class="fa-solid fa-check" style="color: var(--color-feature)"></i> Copied Link!';
+                        setTimeout(() => {
+                            copyLinkBtn.innerHTML = originalHTML;
+                        }, 1500);
+                        showToast('Direct release note link copied!', 'success');
+                    } catch (err) {
+                        console.error('Failed to copy link: ', err);
+                        showToast('Failed to copy link.', 'error');
                     }
                 });
 
@@ -368,10 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchReleaseNotes(true);
     });
 
-    searchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        filterAndRender();
-    });
+    // Search input changes handled below with clear search logic
 
     filterChips.forEach(chip => {
         chip.addEventListener('click', () => {
@@ -407,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     function exportToCSV(entries) {
         if (!entries || entries.length === 0) {
-            alert('No updates available to export.');
+            showToast('No updates available to export.', 'error');
             return;
         }
 
@@ -438,6 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        showToast(`Exported ${entries.length} release updates to CSV!`, 'success');
     }
 
     // Attach export event
@@ -460,6 +527,45 @@ document.addEventListener('DOMContentLoaded', () => {
                     themeIcon.className = 'fa-solid fa-moon';
                 }
             }
+        });
+    }
+
+    // Search input & clear button handlers
+    if (searchInput && clearSearchBtn) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            if (searchQuery) {
+                clearSearchBtn.classList.remove('hidden');
+            } else {
+                clearSearchBtn.classList.add('hidden');
+            }
+            filterAndRender();
+        });
+
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchQuery = '';
+            clearSearchBtn.classList.add('hidden');
+            filterAndRender();
+            showToast('Search query cleared.', 'info');
+        });
+    }
+
+    // Floating Back to Top Handler
+    if (backToTopBtn) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 400) {
+                backToTopBtn.classList.remove('hidden');
+            } else {
+                backToTopBtn.classList.add('hidden');
+            }
+        });
+
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         });
     }
 
